@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -53,16 +54,14 @@ class MessageController extends Controller
 
     public function show($token): \Illuminate\Contracts\View\View|\Illuminate\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Foundation\Application
     {
-        $vueOn = Message::where('token', $token)->firstOrFail();
-        $message = $vueOn->message;
-        if ( !$vueOn->message && $vueOn->created_at != $vueOn->updated_at) {
+        try {
+            $vueOn = Message::where('token', $token)->firstOrFail();
+            $message = $vueOn->message;
             $vueOn->delete();
-            $message = 'Ce message a déjà été lu !';
+            return view('secret')->with('message', $message);
+        } catch (ModelNotFoundException $exception) {
+            $message = 'Le message n\'existe pas ou a déjà été lu. ';
+            return view('secret')->with('message', $message);
         }
-        $vueOn->updated_at = now();
-        $vueOn->save();
-
-        return view('secret')->with('message', $message);
-
     }
 }
